@@ -1,6 +1,6 @@
 # Pinboard Sync
 
-An Obsidian plugin that adds links you've saved with [Pinboard](Pinboard.in) to your Obsidian Daily Notes, synchronizing periodically.
+An Obsidian plugin that adds links you've saved with [Pinboard](http://Pinboard.in) to your Obsidian Daily Notes, synchronizing periodically.
 
 ## Why?
 
