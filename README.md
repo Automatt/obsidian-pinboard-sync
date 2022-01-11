@@ -1,4 +1,4 @@
-# Pinboard Sync
+# Obsidian Pinboard Sync
 
 An Obsidian plugin that adds links you've saved with [Pinboard](http://Pinboard.in) to your Obsidian Daily Notes, synchronizing periodically.
 
@@ -26,7 +26,7 @@ It will refetch the posts at a designated interval.
 | Section Heading | Controls where the links will be displayed within your daily notes. Defaults to `## Pinboard`    |
 | Sync Frequency  | How often you want to fetch the posts from the Pinboard API                                      |
 | Tag Prefix      | You may prefix your Pinboard tags with a parent tag (e.g. `#pinboard/work` `#pinboard/school`)   |
-| Recent Posts    | Number of recent posts to use when syncing.  Up tothe last 100 posts can be retreived.           |
+| Recent Posts    | Number of recent posts to use when syncing.  Up to the last 100 posts can be retreived.           |
 
 
 ## Limitations
