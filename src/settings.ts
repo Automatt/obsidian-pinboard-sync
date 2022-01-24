@@ -67,10 +67,10 @@ export class PinboardSyncSettingsTab extends PluginSettingTab {
   	  	"Pinboard API Token"
   	  )
   	  .addText((textfield) => {
-  	  	textfield.setValue(this.plugin.options.apiToken);
+  	  	textfield.setValue(this.plugin.settings.apiToken);
   	  	textfield.onChange(async (rawApiToken) => {
   	  		const apiToken = rawApiToken.trim();
-  	  		this.plugin.writeOptions({ apiToken });
+  	  		this.plugin.writeSettings({ apiToken });
   	  	});
   	  });
   }
@@ -80,12 +80,12 @@ export class PinboardSyncSettingsTab extends PluginSettingTab {
       .setName("Recent Posts")
       .setDesc("Number of recent posts the plugin will read to sync")
       .addText((textfield) => {
-        textfield.setValue(String(this.plugin.options.recentCount));
+        textfield.setValue(String(this.plugin.settings.recentCount));
         textfield.inputEl.type = "number";
         textfield.inputEl.onblur = (e: FocusEvent) => {
           const recentCount = Number((<HTMLInputElement>e.target).value);
           textfield.setValue(String(recentCount));
-          this.plugin.writeOptions({ recentCount });
+          this.plugin.writeSettings({ recentCount });
         };
       });
   }
@@ -98,10 +98,10 @@ export class PinboardSyncSettingsTab extends PluginSettingTab {
         "Markdown heading to use when adding the Pinboard links to a daily note"
       )
       .addText((textfield) => {
-        textfield.setValue(this.plugin.options.sectionHeading);
+        textfield.setValue(this.plugin.settings.sectionHeading);
         textfield.onChange(async (rawSectionHeading) => {
           const sectionHeading = rawSectionHeading.trim();
-          this.plugin.writeOptions({ sectionHeading });
+          this.plugin.writeSettings({ sectionHeading });
         });
       });
   }
@@ -110,9 +110,9 @@ export class PinboardSyncSettingsTab extends PluginSettingTab {
     new Setting(this.containerEl)
       .setName("Enable periodic syncing")
       .addToggle((toggle) => {
-        toggle.setValue(this.plugin.options.isSyncEnabled);
+        toggle.setValue(this.plugin.settings.isSyncEnabled);
         toggle.onChange(async (isSyncEnabled) => {
-          this.plugin.writeOptions({ isSyncEnabled });
+          this.plugin.writeSettings({ isSyncEnabled });
         });
       });
   }
@@ -122,12 +122,12 @@ export class PinboardSyncSettingsTab extends PluginSettingTab {
       .setName("Sync Frequency")
       .setDesc("Number of seconds the plugin will wait before syncing again")
       .addText((textfield) => {
-        textfield.setValue(String(this.plugin.options.syncInterval));
+        textfield.setValue(String(this.plugin.settings.syncInterval));
         textfield.inputEl.type = "number";
         textfield.inputEl.onblur = (e: FocusEvent) => {
           const syncInterval = Number((<HTMLInputElement>e.target).value);
           textfield.setValue(String(syncInterval));
-          this.plugin.writeOptions({ syncInterval });
+          this.plugin.writeSettings({ syncInterval });
         };
       });
   }
@@ -139,9 +139,9 @@ export class PinboardSyncSettingsTab extends PluginSettingTab {
         "Prefix added to Pinboard tags when imported into Obsidian (e.g. #pinboard/work)"
       )
       .addText((textfield) => {
-        textfield.setValue(this.plugin.options.tagPrefix);
+        textfield.setValue(this.plugin.settings.tagPrefix);
         textfield.onChange(async (tagPrefix) => {
-          this.plugin.writeOptions({ tagPrefix });
+          this.plugin.writeSettings({ tagPrefix });
         });
       });
   }

@@ -1,4 +1,4 @@
-import type moment from "moment";
+import type moment from "obsidian";
 
 import { Notice, Plugin } from "obsidian";
 import {
@@ -29,7 +29,7 @@ declare global {
 
 export default class PinboardSyncPlugin extends Plugin {
 
-  public options: ISettings;
+  public settings: ISettings;
   private syncTimeoutId: number;
   private settingsTab: DailyPinboardSettingsTab;
 
@@ -49,34 +49,32 @@ export default class PinboardSyncPlugin extends Plugin {
       callback: () => setTimeout(this.tryToSyncPinboard, 20),
     });
 
-    await this.loadOptions();
+    await this.loadSettings();
 
     this.settingsTab = new PinboardSyncSettingsTab(this.app, this);
     this.addSettingTab(this.settingsTab);
 
-    if (this.options.hasAcceptedDisclaimer && this.options.isSyncEnabled) {
-      if (this.app.workspace.layoutReady) {
-        this.scheduleNextSync();
-      } else {
-        this.registerEvent(
-          this.app.workspace.on("layout-ready", this.scheduleNextSync)
-        );
-      }
-    }
+    this.app.workspace.onLayoutReady(this.onLayoutReady.bind(this));
   }
 
   onunload() {
     console.log("[Pinboard] unloading plugin");
   }
 
+  async onLayoutReady(): Promise<void> {
+    if (this.settings.hasAcceptedDisclaimer && this.settings.isSyncEnabled) {
+      this.scheduleNextSync();
+    }
+  }
+
   async tryToSyncPinboard(): Promise<void> {
-    if (this.options.hasAcceptedDisclaimer) {
+    if (this.settings.hasAcceptedDisclaimer) {
       this.syncPinboard();
     } else {
       new ConfirmationModal(this.app, {
         cta: "Sync",
         onAccept: async () => {
-          await this.writeOptions({ hasAcceptedDisclaimer: true });
+          await this.writeSettings({ hasAcceptedDisclaimer: true });
           this.syncPinboard();
         },
         text:
@@ -87,17 +85,17 @@ export default class PinboardSyncPlugin extends Plugin {
   }
 
   async tryToScheduleSync(): Promise<void> {
-    if (this.options.hasAcceptedDisclaimer) {
+    if (this.settings.hasAcceptedDisclaimer) {
       this.scheduleNextSync();
     } else {
       new ConfirmationModal(this.app, {
         cta: "Sync",
         onAccept: async () => {
-          await this.writeOptions({ hasAcceptedDisclaimer: true });
+          await this.writeSettings({ hasAcceptedDisclaimer: true });
           this.scheduleNextSync();
         },
         onCancel: async () => {
-          await this.writeOptions({ isSyncEnabled: false });
+          await this.writeSettings({ isSyncEnabled: false });
           // update the settings tab display
           this.settingsTab.display();
         },
@@ -123,13 +121,13 @@ export default class PinboardSyncPlugin extends Plugin {
 
 
   async syncPinboard(): Promise<void> {
-    const pinRenderer = new PinRenderer(this.app, this.options);
+    const pinRenderer = new PinRenderer(this.app, this.settings);
     const dailyNotes = getAllDailyNotes();
-    const latestSyncTime = this.options.latestSyncTime || 0;
+    const latestSyncTime = this.settings.latestSyncTime || 0;
 
     let pinCollection = [];
     try {
-      pinCollection = await this.getPostsFromPinboard(latestSyncTime, this.options);
+      pinCollection = await this.getPostsFromPinboard(latestSyncTime, this.settings);
     } catch (err) {
       new Notice("[Pinboard Sync] failed");
       console.log(err);
@@ -153,13 +151,13 @@ export default class PinboardSyncPlugin extends Plugin {
       await updateSection(
         this.app,
         dailyNote,
-        this.options.sectionHeading,
+        this.settings.sectionHeading,
         pinRenderer.render(pins)
       );
     }
 
     new Notice("[Pinboard Sync] complete");
-    this.writeOptions({ latestSyncTime: window.moment().unix() });
+    this.writeSettings({ latestSyncTime: window.moment().unix() });
     this.scheduleNextSync();
   }
 
@@ -173,12 +171,12 @@ export default class PinboardSyncPlugin extends Plugin {
     const now = window.moment().unix();
 
     this.cancelScheduledSync();
-    if (!this.options.isSyncEnabled || !this.options.syncInterval) {
+    if (!this.settings.isSyncEnabled || !this.settings.syncInterval) {
       console.log("[Pinboard] scheduling skipped, no syncInterval set");
       return;
     }
 
-    const { latestSyncTime, syncInterval } = this.options;
+    const { latestSyncTime, syncInterval } = this.settings;
     const syncIntervalMs = syncInterval * 1000;
     const nextSync = Math.max(latestSyncTime + syncIntervalMs - now, 20);
 
@@ -186,26 +184,17 @@ export default class PinboardSyncPlugin extends Plugin {
     this.syncTimeoutId = window.setTimeout(this.syncPinboard, nextSync);
   }
 
-
   async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-  }
-
-  async saveSettings() {
-    await this.saveData(this.settings);
-  }
-
-  async loadOptions(): Promise<void> {
-    this.options = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-    if (!this.options.hasAcceptedDisclaimer) {
-      // In case the user quits before accepting sync modal,
-      // this will keep the settings in sync
-      this.options.isSyncEnabled = false;
+    if (!this.settings.hasAcceptedDisclaimer) {
+      // In case the user quits before accepting sync modal
+      this.settings.isSyncEnabled = false;
     }
   }
 
-  async writeOptions(diff: Partial<ISettings>): Promise<void> {
-    this.options = Object.assign(this.options, diff);
+
+  async writeSettings(diff: Partial<ISettings>): Promise<void> {
+    this.settings = Object.assign(this.settings, diff);
 
     // Sync toggled on/off
     if (diff.isSyncEnabled !== undefined) {
@@ -214,12 +203,12 @@ export default class PinboardSyncPlugin extends Plugin {
       } else {
         this.cancelScheduledSync();
       }
-    } else if (diff.syncInterval !== undefined && this.options.isSyncEnabled) {
+    } else if (diff.syncInterval !== undefined && this.settings.isSyncEnabled) {
       // reschedule if interval changed
       this.tryToScheduleSync();
     }
 
-    await this.saveData(this.options);
+    await this.saveData(this.settings);
   }
 
 }
