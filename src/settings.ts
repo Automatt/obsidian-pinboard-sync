@@ -7,6 +7,9 @@ export const DEFAULT_SYNC_FREQUENCY_SECONDS = 30 * 60; // Every 30 minutes
 export const DEFAULT_TAG_PREFIX = "pinboard/";
 export const DEFAULT_PIN_TOKEN = "Username:SecretTokenCode"
 export const DEFAULT_RECENT_COUNT = 20;
+export const DEFAULT_ONE_NOTE_PER_PIN_PATH = 'pinboard/';
+export const DEFAULT_ONE_NOTE_PER_PIN_TAG = 'pinboard';
+export const DEFAULT_ONE_NOTE_PER_PIN_TITLE_FORMAT = 'YYYY-MM/[{description}]'
 
 export interface ISettings {
   apiToken: string;
@@ -18,6 +21,10 @@ export interface ISettings {
   syncInterval: number;
   tagPrefix: string;
   recentCount: number;
+  oneNotePerPin: boolean;
+  oneNotePerPinPath: string;
+  oneNotePerPinTag: string;
+  oneNotePerPinTitleFormat: string;
 }
 
 export const DEFAULT_SETTINGS = Object.freeze({
@@ -28,13 +35,17 @@ export const DEFAULT_SETTINGS = Object.freeze({
   syncInterval: DEFAULT_SYNC_FREQUENCY_SECONDS,
   sectionHeading: DEFAULT_SECTION_HEADING,
   tagPrefix: DEFAULT_TAG_PREFIX,
-  recentCount: DEFAULT_RECENT_COUNT
+  recentCount: DEFAULT_RECENT_COUNT,
+  oneNotePerPin: false,
+  oneNotePerPinPath: DEFAULT_ONE_NOTE_PER_PIN_PATH,
+  oneNotePerPinTag: DEFAULT_ONE_NOTE_PER_PIN_TAG,
+  oneNotePerPinTitleFormat: DEFAULT_ONE_NOTE_PER_PIN_TITLE_FORMAT
 });
 
 export class PinboardSyncSettingsTab extends PluginSettingTab {
-	private plugin: DailyPinboardPlugIn;
+	private plugin: PinboardSyncPlugIn;
 
-	constructor(app: App, plugin: DailyPinboardPlugIn) {
+	constructor(app: App, plugin: PinboardSyncPlugIn) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
@@ -45,6 +56,14 @@ export class PinboardSyncSettingsTab extends PluginSettingTab {
     	text: "Pinboard",
     });
     this.addApiTokenSetting();
+
+    this.containerEl.createEl("h3", {
+    	text: "One note per pin",
+    });
+    this.addOneNotePerPinSetting();
+    this.addOneNotePerPinPathSetting();
+    this.addOneNotePerPinTagSetting();
+    this.addOneNotePerPinTitleFormatSetting();
 
     this.containerEl.createEl("h3", {
       text: "Format",
@@ -73,6 +92,68 @@ export class PinboardSyncSettingsTab extends PluginSettingTab {
   	  		this.plugin.writeSettings({ apiToken });
   	  	});
   	  });
+  }
+
+  addOneNotePerPinSetting(): void {
+  	new Setting(this.containerEl)
+  	  .setName("Enable one note per pin mode")
+  	  .setDesc(
+  	  	"When enabled, syncing will create a new note per pin"
+  	  )
+      .addToggle((toggle) => {
+        toggle.setValue(this.plugin.settings.oneNotePerPin);
+        toggle.onChange(oneNotePerPin => {
+          this.plugin.writeSettings({ oneNotePerPin });
+        });
+      })
+  }
+
+  addOneNotePerPinPathSetting(): void {
+  	new Setting(this.containerEl)
+  	  .setName("One note per pin path")
+  	  .setDesc(
+  	  	"The path to store pins in when using the one note per pin setting"
+  	  )
+      .addText((textfield) => {
+        textfield.setValue(this.plugin.settings.oneNotePerPinPath);
+        textfield.inputEl.onblur = (e: FocusEvent) => {
+          const oneNotePerPinPath = (<HTMLInputElement>e.target).value;
+          textfield.setValue(oneNotePerPinPath);
+          this.plugin.writeSettings({ oneNotePerPinPath });
+        };
+      })
+  }
+
+  addOneNotePerPinTagSetting(): void {
+  	new Setting(this.containerEl)
+  	  .setName("One note per pin tag")
+  	  .setDesc(
+  	  	"An optional tag to add to all notes created to match pinboard pins"
+  	  )
+      .addText((textfield) => {
+        textfield.setValue(this.plugin.settings.oneNotePerPinTag);
+        textfield.inputEl.onblur = (e: FocusEvent) => {
+          const oneNotePerPinTag = (<HTMLInputElement>e.target).value;
+          textfield.setValue(oneNotePerPinTag);
+          this.plugin.writeSettings({ oneNotePerPinTag });
+        };
+      })
+  }
+
+  addOneNotePerPinTitleFormatSetting(): void {
+  	new Setting(this.containerEl)
+  	  .setName("One note per pin title format")
+  	  .setDesc(
+  	  	"The format to use when saving pins into the folder. Uses moment format, [{description}] is replaced with the pin description"
+  	  )
+      .addText((textfield) => {
+        textfield.setValue(this.plugin.settings.oneNotePerPinTitleFormat);
+        textfield.inputEl.onblur = (e: FocusEvent) => {
+          const oneNotePerPinTitleFormat = (<HTMLInputElement>e.target).value;
+          textfield.setValue(oneNotePerPinTitleFormat);
+          this.plugin.writeSettings({ oneNotePerPinTitleFormat });
+        };
+      })
   }
 
     addRecentCountSetting(): void {
