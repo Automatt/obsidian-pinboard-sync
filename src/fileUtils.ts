@@ -15,10 +15,9 @@ export function getEditorForFile(app: App, file: TFile): Editor | null {
 }
 
 function formatAsFilename(str: string) {
-  // Remove any characters that are not letters, numbers, dots, hyphens, and underscores
+  // Remove any characters that aren't in this explicit list, to ensure safety for file paths
   let validStr = str.replace(/[^a-zA-Z0-9\s\.\-_]/g, '');
 
-  
   // Remove leading and trailing spaces
   validStr = validStr.trim();
 
@@ -31,35 +30,40 @@ function formatAsFilename(str: string) {
 
 
 function getPinPath(pin: PinboardPost, basePath: string, format: string) {
-  // We support the format [{description}], which are pin fields.
-  // We wrap in square brackets to escape moment, and curly braces act as our template signifier
+  // We support the format [{description}], which are fields on the PinboardPost object.
+  // We wrap in square brackets to escape moment, and curly braces act as our template signifier.
+  // (ie, moment.format will leave just {description}, which we can then replace ourselves)
   const dateFormattedFileName = moment(pin.time).format(format);
   let formattedFileName = dateFormattedFileName;
+
   for (let key of pinFormattingFields) {
     let value = pin[key];
-    // Special handling for the tags field, which is pretty structured
+    // Special handling for the tags field, which is pretty structured: extract the names and join them with commas,
+    // eg. {tags} --> `pinboard/reference, pinboard/later`
     if (key === 'tags') {
       value = (value as PinboardTag[]).map(tag => tag.name).join(',')
     }
 
     formattedFileName = formattedFileName.replace(new RegExp(`{${key}}`, 'g'), formatAsFilename(String(value)));
-
   }
   return normalizePath(`${basePath}/${formattedFileName}.md`);
 }
 
 /**
- * a utility to make sure that all folders exist, if not, they will get created as an empty file
+ * A utility to make sure that all folders exist, if not, they will get created as an empty file
+ * @param app
  * @param path eg. path/to/file.md
  */
 async function touchFileAtPath(app: App, path: string) {
   const { vault } = app;
   const pathParts = path.split('/');
   const currentPath = [];
+
   if (pathParts.length === 0) {
     return;
   }
-  // Create the folders
+  
+  // Create all necessary folders
   while (pathParts.length > 1) {
     const part = pathParts.shift();
     currentPath.push(part);
@@ -73,7 +77,7 @@ async function touchFileAtPath(app: App, path: string) {
 
   // All necessary folders exist. Create the file at the end
   const file = vault.getAbstractFileByPath(path);
-
+  
   if (!file || !(file instanceof TFile)) {
     return await vault.create(path, '');
   }
@@ -82,9 +86,6 @@ async function touchFileAtPath(app: App, path: string) {
 }
 
 export async function getOrCreateNoteForPin(app: App, pin: PinboardPost, path: string, format: string): Promise<TFile | undefined> {
-  const { vault } = app;
-
   const pinPath = getPinPath(pin, path, format);
-
   return touchFileAtPath(app, pinPath);
 }

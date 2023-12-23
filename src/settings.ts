@@ -27,6 +27,7 @@ export interface ISettings {
   latestSyncTime: number;
 
   isSyncEnabled: boolean;
+  dailyNotesEnabled: boolean;
   sectionHeading: string;
   syncInterval: number;
   tagPrefix: string;
@@ -43,6 +44,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   latestSyncTime: 0,
   isSyncEnabled: false,
   syncInterval: DEFAULT_SYNC_FREQUENCY_SECONDS,
+  dailyNotesEnabled: true,
   sectionHeading: DEFAULT_SECTION_HEADING,
   tagPrefix: DEFAULT_TAG_PREFIX,
   recentCount: DEFAULT_RECENT_COUNT,
@@ -67,26 +69,31 @@ export class PinboardSyncSettingsTab extends PluginSettingTab {
     });
     this.addApiTokenSetting();
 
-    this.containerEl.createEl("h3", {
+    this.containerEl.createEl("h4", {
+    	text: "General",
+    });
+    this.addTagPrefixSetting();
+
+    this.containerEl.createEl("h4", {
+      text: "Daily notes",
+    });
+    this.addDailyNotesSetting();
+    this.addSectionHeadingSetting();
+
+    this.containerEl.createEl("h4", {
+      text: "Sync",
+    });
+    this.addSyncEnabledSetting();
+    this.addSyncIntervalSetting();
+    this.addRecentCountSetting();
+
+    this.containerEl.createEl("h4", {
     	text: "One note per pin",
     });
     this.addOneNotePerPinSetting();
     this.addOneNotePerPinPathSetting();
     this.addOneNotePerPinTagSetting();
     this.addOneNotePerPinTitleFormatSetting();
-
-    this.containerEl.createEl("h3", {
-      text: "Format",
-    });
-    this.addSectionHeadingSetting();
-    this.addTagPrefixSetting();
-
-    this.containerEl.createEl("h3", {
-      text: "Sync",
-    });
-    this.addSyncEnabledSetting();
-    this.addSyncIntervalSetting();
-    this.addRecentCountSetting();
   }
 
   addApiTokenSetting(): void {
@@ -195,6 +202,20 @@ export class PinboardSyncSettingsTab extends PluginSettingTab {
           this.plugin.writeSettings({ sectionHeading });
         });
       });
+  }
+
+  addDailyNotesSetting(): void {
+    new Setting(this.containerEl)
+      .setName("Enable adding pins to daily notes")
+      .setDesc(
+        "When enabled, pins will be synced to the day's daily note"
+      )
+      .addToggle((toggle) => {
+        toggle.setValue(this.plugin.settings.dailyNotesEnabled);
+        toggle.onChange(dailyNotesEnabled => {
+          this.plugin.writeSettings({ dailyNotesEnabled });
+        });
+      })
   }
 
   addSyncEnabledSetting(): void {

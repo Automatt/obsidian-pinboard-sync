@@ -66,7 +66,6 @@ export default class PinboardSyncPlugin extends Plugin {
     if (this.settings.hasAcceptedDisclaimer && this.settings.isSyncEnabled) {
       this.scheduleNextSync();
     }
-    this.syncPinboard(); // DEBUG
   }
 
   async tryToSyncPinboard(): Promise<void> {
@@ -144,7 +143,9 @@ export default class PinboardSyncPlugin extends Plugin {
           pinRenderer.renderPinProperties(pin)
         );
       }));
-    } else {
+    }
+    
+    if (this.settings.dailyNotesEnabled) {
       const daysToPins: Record<string, PinboardPost[]> = groupBy(
         pinCollection.posts.filter((pin) => pin.time),
         (pin) => window.moment(pin.time).startOf("day").format()
@@ -167,7 +168,6 @@ export default class PinboardSyncPlugin extends Plugin {
         );
       }
     }
-
 
     new Notice("[Pinboard Sync] complete");
     this.writeSettings({ latestSyncTime: window.moment().unix() });

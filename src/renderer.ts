@@ -27,8 +27,8 @@ export class PinRenderer {
 		pin.tags.forEach(t => tagNames.push(t.name));
 
 		return tagNames.filter((tag) => !!tag)
-		.map((tag) => tag.replace(/\s+/g, "-").toLowerCase())
-		.map((tag) => `${omitHash ? '' : '#'}${prefix}${tag}`)
+			.map((tag) => tag.replace(/\s+/g, "-").toLowerCase())
+			.map((tag) => `${omitHash ? '' : '#'}${prefix}${tag}`);
 	}
 
 	renderPin(pin: PinboardPost): string {
@@ -51,14 +51,14 @@ export class PinRenderer {
 
 	public renderPinProperties(pin: PinboardPost): string {
 		return dedent`---
-		href: ${pin.href}
-		tags: ${[this.settings.oneNotePerPinTag, ...this.renderTags(pin, true)].join(', ')}
-		description: ${pin.description}
-		extended: ${pin.extended}
-		time: ${moment(pin.time).toISOString()}
-		to-read: ${pin.toread}
-		shared: ${pin.shared}
-		---
+			href: ${pin.href}
+			tags: ${[this.settings.oneNotePerPinTag, ...this.renderTags(pin, true)].join(', ')}
+			description: ${pin.description}
+			extended: ${pin.extended}
+			time: ${moment(pin.time).toISOString()}
+			to-read: ${pin.toread}
+			shared: ${pin.shared}
+			---
 		`;
 	}
 

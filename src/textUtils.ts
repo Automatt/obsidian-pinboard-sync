@@ -59,7 +59,6 @@ export async function updateSection(
 
   const editor = getEditorForFile(app, file);
   if (editor) {
-    
     // if the "## Pinboard" header exists, we just replace the
     // section. If it doesn't, we need to append it to the end
     // if the file and add `\n` for separation.
@@ -96,6 +95,18 @@ export async function updateSection(
   }
 }
 
+/**
+ * Replaces the properties block at the start of a file with this new one, or adds a new properties block if that does not exist
+ * @param app 
+ * @param file the file to add to
+ * @param properties a string representing the properties to add
+ * @example
+ * const properties = dedent`---
+ *   tags: work
+ *   time: 2023-12-01
+ *   ---`;
+ * updateProperties(app, file, properties);
+ */
 export async function updateProperties(
   app: App,
   file: TFile,
