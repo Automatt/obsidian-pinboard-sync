@@ -4,6 +4,7 @@ import { ISettings } from "./settings";
 import { getHeadingLevel, getTab, groupBy, toHeading } from "./textUtils";
 import { PinboardPost, PinboardPostCollection } from "./pbsdk";
 import dedent from "dedent";
+import moment from "moment";
 
 export class PinRenderer {
 	private app: App;
@@ -54,7 +55,7 @@ export class PinRenderer {
 		tags: ${[this.settings.oneNotePerPinTag, ...this.renderTags(pin, true)].join(', ')}
 		description: ${pin.description}
 		extended: ${pin.extended}
-		time: ${pin.time}
+		time: ${moment(pin.time).toISOString()}
 		to-read: ${pin.toread}
 		shared: ${pin.shared}
 		---

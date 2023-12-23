@@ -1,6 +1,7 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 
 import type PinboardSyncPlugIn from "./main";
+import { PinboardPost } from "./pbsdk";
 
 export const DEFAULT_SECTION_HEADING = "## Pinboard";
 export const DEFAULT_SYNC_FREQUENCY_SECONDS = 30 * 60; // Every 30 minutes
@@ -10,6 +11,15 @@ export const DEFAULT_RECENT_COUNT = 20;
 export const DEFAULT_ONE_NOTE_PER_PIN_PATH = 'pinboard/';
 export const DEFAULT_ONE_NOTE_PER_PIN_TAG = 'pinboard';
 export const DEFAULT_ONE_NOTE_PER_PIN_TITLE_FORMAT = 'YYYY-MM/[{description}]'
+
+export const pinFormattingFields: (keyof PinboardPost)[] = [
+  'description',
+  'href',
+  'extended',
+  'shared',
+  'toread',
+  'tags'
+]
 
 export interface ISettings {
   apiToken: string;
@@ -144,7 +154,7 @@ export class PinboardSyncSettingsTab extends PluginSettingTab {
   	new Setting(this.containerEl)
   	  .setName("One note per pin title format")
   	  .setDesc(
-  	  	"The format to use when saving pins into the folder. Uses moment format, [{description}] is replaced with the pin description"
+  	  	`The format to use when saving pins into the folder. Uses moment format, [{description}] is replaced with the pin description. Supports ${pinFormattingFields.map(field => `[{${field}}]`).join(',')} fields of pins`
   	  )
       .addText((textfield) => {
         textfield.setValue(this.plugin.settings.oneNotePerPinTitleFormat);

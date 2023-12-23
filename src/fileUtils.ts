@@ -1,7 +1,8 @@
 import { Editor } from "codemirror";
 import moment from "moment";
 import { App, MarkdownView, TFile, normalizePath, Notice, TFolder } from "obsidian";
-import { PinboardPost } from "./pbsdk";
+import { PinboardPost, PinboardTag } from "./pbsdk";
+import { pinFormattingFields } from "./settings";
 
 export function getEditorForFile(app: App, file: TFile): Editor | null {
   let editor = null;
@@ -22,14 +23,28 @@ function formatAsFilename(str: string) {
   validStr = validStr.trim();
 
   // Ensure the filename is not too long
-  const MAX_LENGTH = 50;
+  const MAX_LENGTH = 150;
   validStr = validStr.substring(0, MAX_LENGTH);
 
   return validStr;
 }
 
+
 function getPinPath(pin: PinboardPost, basePath: string, format: string) {
-  const formattedFileName = moment(pin.time).format(format).replace('{description}', formatAsFilename(pin.description))
+  // We support the format [{description}], which are pin fields.
+  // We wrap in square brackets to escape moment, and curly braces act as our template signifier
+  const dateFormattedFileName = moment(pin.time).format(format);
+  let formattedFileName = dateFormattedFileName;
+  for (let key of pinFormattingFields) {
+    let value = pin[key];
+    // Special handling for the tags field, which is pretty structured
+    if (key === 'tags') {
+      value = (value as PinboardTag[]).map(tag => tag.name).join(',')
+    }
+
+    formattedFileName = formattedFileName.replace(new RegExp(`{${key}}`, 'g'), formatAsFilename(String(value)));
+
+  }
   return normalizePath(`${basePath}/${formattedFileName}.md`);
 }
 
