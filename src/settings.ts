@@ -17,6 +17,7 @@ export interface ISettings {
   sectionHeading: string;
   syncInterval: number;
   tagPrefix: string;
+  newlineSeparator: boolean;
   recentCount: number;
 }
 
@@ -28,6 +29,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   syncInterval: DEFAULT_SYNC_FREQUENCY_SECONDS,
   sectionHeading: DEFAULT_SECTION_HEADING,
   tagPrefix: DEFAULT_TAG_PREFIX,
+  newlineSeparator: false, 
   recentCount: DEFAULT_RECENT_COUNT
 });
 
@@ -51,6 +53,7 @@ export class PinboardSyncSettingsTab extends PluginSettingTab {
     });
     this.addSectionHeadingSetting();
     this.addTagPrefixSetting();
+    this.addNewlineSeparatorSetting();
 
     this.containerEl.createEl("h3", {
       text: "Sync",
@@ -142,6 +145,20 @@ export class PinboardSyncSettingsTab extends PluginSettingTab {
         textfield.setValue(this.plugin.settings.tagPrefix);
         textfield.onChange(async (tagPrefix) => {
           this.plugin.writeSettings({ tagPrefix });
+        });
+      });
+  }
+
+  addNewlineSeparatorSetting(): void {
+    new Setting(this.containerEl)
+      .setName("Use new line as separator")
+      .setDesc(
+        "Use a new line (instead of a space) to separate url, description and tags"
+      )
+      .addToggle((toggle) => {
+        toggle.setValue(this.plugin.settings.newlineSeparator);
+        toggle.onChange(async (newlineSeparator) => {
+          this.plugin.writeSettings({ newlineSeparator });
         });
       });
   }
