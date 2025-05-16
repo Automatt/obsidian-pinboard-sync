@@ -31,6 +31,7 @@ export interface ISettings {
   sectionHeading: string;
   syncInterval: number;
   tagPrefix: string;
+  newlineSeparator: boolean;
   recentCount: number;
   oneNotePerPin: boolean;
   oneNotePerPinPath: string;
@@ -52,6 +53,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   oneNotePerPinPath: DEFAULT_ONE_NOTE_PER_PIN_PATH,
   oneNotePerPinTag: DEFAULT_ONE_NOTE_PER_PIN_TAG,
   oneNotePerPinTitleFormat: DEFAULT_ONE_NOTE_PER_PIN_TITLE_FORMAT
+  newlineSeparator: false, 
 });
 
 export class PinboardSyncSettingsTab extends PluginSettingTab {
@@ -73,6 +75,7 @@ export class PinboardSyncSettingsTab extends PluginSettingTab {
     	text: "General",
     });
     this.addTagPrefixSetting();
+    this.addNewlineSeparatorSetting();
 
     this.containerEl.createEl("h4", {
       text: "Daily notes",
@@ -254,6 +257,20 @@ export class PinboardSyncSettingsTab extends PluginSettingTab {
         textfield.setValue(this.plugin.settings.tagPrefix);
         textfield.onChange(async (tagPrefix) => {
           this.plugin.writeSettings({ tagPrefix });
+        });
+      });
+  }
+
+  addNewlineSeparatorSetting(): void {
+    new Setting(this.containerEl)
+      .setName("Use new line as separator")
+      .setDesc(
+        "Use a new line (instead of a space) to separate url, description and tags"
+      )
+      .addToggle((toggle) => {
+        toggle.setValue(this.plugin.settings.newlineSeparator);
+        toggle.onChange(async (newlineSeparator) => {
+          this.plugin.writeSettings({ newlineSeparator });
         });
       });
   }
