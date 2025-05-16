@@ -20,14 +20,20 @@ It will refetch the posts at a designated interval.
 
 ## Settings
 
-| Setting         | Description                                                                                      |
-| --------------- | ------------------------------------------------------------------------------------------------ |
-| Token           | API token from your Pinbord account.  Available in [settings/password](https://pinboard.in/settings/password)|
-| Section Heading | Controls where the links will be displayed within your daily notes. Defaults to `## Pinboard`    |
-| Sync Frequency  | How often you want to fetch the posts from the Pinboard API                                      |
-| Tag Prefix      | You may prefix your Pinboard tags with a parent tag (e.g. `#pinboard/work` `#pinboard/school`)   |
-| Recent Posts    | Number of recent posts to use when syncing.  Up to the last 100 posts can be retreived.           |
-
+| Setting | Description |
+|---------|-------------|
+| Token | API token from your Pinboard account. Available in [settings/password](https://pinboard.in/settings/password) |
+| Tag Prefix | Prefix added to Pinboard tags when imported into Obsidian (e.g. #pinboard/work) |
+| Use new line as separator | Use a new line (instead of a space) to separate URL, description and tags |
+| Enable adding pins to daily notes | When enabled, pins will be synced to the day's daily note |
+| Section Heading | Markdown heading to use when adding the Pinboard links to a daily note |
+| Enable periodic syncing | Toggle to enable/disable automatic syncing |
+| Sync Frequency | Number of seconds to wait between syncs |
+| Recent Posts | Number of recent posts to use when syncing (up to 100) |
+| Enable one note per pin mode | When enabled, syncing will create a new note per pin |
+| One note per pin path | The path to store pins in when using the one note per pin setting |
+| One note per pin tag | An optional tag to add to all notes created to match pinboard pins |
+| One note per pin title format | The format to use when saving pins into the folder. Uses moment format, supports fields like [{description}], [{href}], [{extended}], [{shared}], [{toread}], [{tags}] |
 
 ## Limitations
 
