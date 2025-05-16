@@ -27,7 +27,7 @@ export class PinRenderer {
 		pin.tags.forEach(t => tagNames.push(t.name));
 
 		return tagNames.filter((tag) => !!tag)
-			.map((tag) => tag.replace(/\s+/g, "-").toLowerCase())
+			.map((tag) => tag.replace(/\s+/g, "-").replace(/:/g, "-").toLowerCase())
 			.map((tag) => `${omitHash ? '' : '#'}${prefix}${tag}`);
 	}
 
