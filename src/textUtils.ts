@@ -94,3 +94,46 @@ export async function updateSection(
     return vault.modify(file, [...fileLines, "", sectionContents].join("\n"));
   }
 }
+
+/**
+ * Replaces the properties block at the start of a file with this new one, or adds a new properties block if that does not exist
+ * @param app 
+ * @param file the file to add to
+ * @param properties a string representing the properties to add
+ * @example
+ * const properties = dedent`---
+ *   tags: work
+ *   time: 2023-12-01
+ *   ---`;
+ * updateProperties(app, file, properties);
+ */
+export async function updateProperties(
+  app: App,
+  file: TFile,
+  properties: string
+): Promise<void> {
+  const { vault } = app;
+  const fileContents = await vault.read(file);
+  let fileLines = fileContents.split("\n");
+  const propertiesLines: number[] = [];
+  
+  // Collect all of the properties marker lines
+  for (let i = 0; i < fileLines.length; i++) {
+    if (fileLines[i] === '---') {
+      propertiesLines.push(i);
+    }
+  }
+
+  // If we found correct matching markers, remove the existing properties so we can update them
+  if (propertiesLines[0] === 0 && propertiesLines[1] > 0) {
+    const propertiesEndLine = propertiesLines[1];
+    fileLines = fileLines.slice(propertiesEndLine + 1)
+  }
+
+  // Don't worry about the case where the editor is open here.
+  // It's more unlikely that the user is editing the existing note
+  return vault.modify(
+    file,
+    [properties, ...fileLines].join('\n')
+  );
+}

@@ -1,12 +1,25 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 
 import type PinboardSyncPlugIn from "./main";
+import { PinboardPost } from "./pbsdk";
 
 export const DEFAULT_SECTION_HEADING = "## Pinboard";
 export const DEFAULT_SYNC_FREQUENCY_SECONDS = 30 * 60; // Every 30 minutes
 export const DEFAULT_TAG_PREFIX = "pinboard/";
 export const DEFAULT_PIN_TOKEN = "Username:SecretTokenCode"
 export const DEFAULT_RECENT_COUNT = 20;
+export const DEFAULT_ONE_NOTE_PER_PIN_PATH = 'pinboard/';
+export const DEFAULT_ONE_NOTE_PER_PIN_TAG = 'pinboard';
+export const DEFAULT_ONE_NOTE_PER_PIN_TITLE_FORMAT = 'YYYY-MM/[{description}]'
+
+export const pinFormattingFields: (keyof PinboardPost)[] = [
+  'description',
+  'href',
+  'extended',
+  'shared',
+  'toread',
+  'tags'
+]
 
 export interface ISettings {
   apiToken: string;
@@ -14,11 +27,16 @@ export interface ISettings {
   latestSyncTime: number;
 
   isSyncEnabled: boolean;
+  dailyNotesEnabled: boolean;
   sectionHeading: string;
   syncInterval: number;
   tagPrefix: string;
   newlineSeparator: boolean;
   recentCount: number;
+  oneNotePerPin: boolean;
+  oneNotePerPinPath: string;
+  oneNotePerPinTag: string;
+  oneNotePerPinTitleFormat: string;
 }
 
 export const DEFAULT_SETTINGS = Object.freeze({
@@ -27,16 +45,21 @@ export const DEFAULT_SETTINGS = Object.freeze({
   latestSyncTime: 0,
   isSyncEnabled: false,
   syncInterval: DEFAULT_SYNC_FREQUENCY_SECONDS,
+  dailyNotesEnabled: true,
   sectionHeading: DEFAULT_SECTION_HEADING,
   tagPrefix: DEFAULT_TAG_PREFIX,
+  recentCount: DEFAULT_RECENT_COUNT,
+  oneNotePerPin: false,
+  oneNotePerPinPath: DEFAULT_ONE_NOTE_PER_PIN_PATH,
+  oneNotePerPinTag: DEFAULT_ONE_NOTE_PER_PIN_TAG,
+  oneNotePerPinTitleFormat: DEFAULT_ONE_NOTE_PER_PIN_TITLE_FORMAT
   newlineSeparator: false, 
-  recentCount: DEFAULT_RECENT_COUNT
 });
 
 export class PinboardSyncSettingsTab extends PluginSettingTab {
-	private plugin: DailyPinboardPlugIn;
+	private plugin: PinboardSyncPlugIn;
 
-	constructor(app: App, plugin: DailyPinboardPlugIn) {
+	constructor(app: App, plugin: PinboardSyncPlugIn) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
@@ -48,19 +71,32 @@ export class PinboardSyncSettingsTab extends PluginSettingTab {
     });
     this.addApiTokenSetting();
 
-    this.containerEl.createEl("h3", {
-      text: "Format",
+    this.containerEl.createEl("h4", {
+    	text: "General",
     });
-    this.addSectionHeadingSetting();
     this.addTagPrefixSetting();
     this.addNewlineSeparatorSetting();
 
-    this.containerEl.createEl("h3", {
+    this.containerEl.createEl("h4", {
+      text: "Daily notes",
+    });
+    this.addDailyNotesSetting();
+    this.addSectionHeadingSetting();
+
+    this.containerEl.createEl("h4", {
       text: "Sync",
     });
     this.addSyncEnabledSetting();
     this.addSyncIntervalSetting();
     this.addRecentCountSetting();
+
+    this.containerEl.createEl("h4", {
+    	text: "One note per pin",
+    });
+    this.addOneNotePerPinSetting();
+    this.addOneNotePerPinPathSetting();
+    this.addOneNotePerPinTagSetting();
+    this.addOneNotePerPinTitleFormatSetting();
   }
 
   addApiTokenSetting(): void {
@@ -76,6 +112,68 @@ export class PinboardSyncSettingsTab extends PluginSettingTab {
   	  		this.plugin.writeSettings({ apiToken });
   	  	});
   	  });
+  }
+
+  addOneNotePerPinSetting(): void {
+  	new Setting(this.containerEl)
+  	  .setName("Enable one note per pin mode")
+  	  .setDesc(
+  	  	"When enabled, syncing will create a new note per pin"
+  	  )
+      .addToggle((toggle) => {
+        toggle.setValue(this.plugin.settings.oneNotePerPin);
+        toggle.onChange(oneNotePerPin => {
+          this.plugin.writeSettings({ oneNotePerPin });
+        });
+      })
+  }
+
+  addOneNotePerPinPathSetting(): void {
+  	new Setting(this.containerEl)
+  	  .setName("One note per pin path")
+  	  .setDesc(
+  	  	"The path to store pins in when using the one note per pin setting"
+  	  )
+      .addText((textfield) => {
+        textfield.setValue(this.plugin.settings.oneNotePerPinPath);
+        textfield.inputEl.onblur = (e: FocusEvent) => {
+          const oneNotePerPinPath = (<HTMLInputElement>e.target).value;
+          textfield.setValue(oneNotePerPinPath);
+          this.plugin.writeSettings({ oneNotePerPinPath });
+        };
+      })
+  }
+
+  addOneNotePerPinTagSetting(): void {
+  	new Setting(this.containerEl)
+  	  .setName("One note per pin tag")
+  	  .setDesc(
+  	  	"An optional tag to add to all notes created to match pinboard pins"
+  	  )
+      .addText((textfield) => {
+        textfield.setValue(this.plugin.settings.oneNotePerPinTag);
+        textfield.inputEl.onblur = (e: FocusEvent) => {
+          const oneNotePerPinTag = (<HTMLInputElement>e.target).value;
+          textfield.setValue(oneNotePerPinTag);
+          this.plugin.writeSettings({ oneNotePerPinTag });
+        };
+      })
+  }
+
+  addOneNotePerPinTitleFormatSetting(): void {
+  	new Setting(this.containerEl)
+  	  .setName("One note per pin title format")
+  	  .setDesc(
+  	  	`The format to use when saving pins into the folder. Uses moment format, [{description}] is replaced with the pin description. Supports ${pinFormattingFields.map(field => `[{${field}}]`).join(',')} fields of pins`
+  	  )
+      .addText((textfield) => {
+        textfield.setValue(this.plugin.settings.oneNotePerPinTitleFormat);
+        textfield.inputEl.onblur = (e: FocusEvent) => {
+          const oneNotePerPinTitleFormat = (<HTMLInputElement>e.target).value;
+          textfield.setValue(oneNotePerPinTitleFormat);
+          this.plugin.writeSettings({ oneNotePerPinTitleFormat });
+        };
+      })
   }
 
     addRecentCountSetting(): void {
@@ -107,6 +205,20 @@ export class PinboardSyncSettingsTab extends PluginSettingTab {
           this.plugin.writeSettings({ sectionHeading });
         });
       });
+  }
+
+  addDailyNotesSetting(): void {
+    new Setting(this.containerEl)
+      .setName("Enable adding pins to daily notes")
+      .setDesc(
+        "When enabled, pins will be synced to the day's daily note"
+      )
+      .addToggle((toggle) => {
+        toggle.setValue(this.plugin.settings.dailyNotesEnabled);
+        toggle.onChange(dailyNotesEnabled => {
+          this.plugin.writeSettings({ dailyNotesEnabled });
+        });
+      })
   }
 
   addSyncEnabledSetting(): void {

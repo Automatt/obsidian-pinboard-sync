@@ -1,6 +1,6 @@
 import type moment from "obsidian";
 
-import { Notice, Plugin } from "obsidian";
+import { normalizePath, Notice, Plugin } from "obsidian";
 import {
   createDailyNote,
   getDailyNote,
@@ -15,10 +15,11 @@ import {
   PinboardSyncSettingsTab,
 } from "./settings";
 
-import { Pinboard } from "./pbsdk";
+import { Pinboard, PinboardPost, PinboardPostCollection } from "./pbsdk";
 import { PinRenderer } from "./renderer";
 
-import { groupBy, isMacOS, updateSection } from "./textUtils";
+import { groupBy, updateProperties, updateSection } from "./textUtils";
+import { getOrCreateNoteForPin } from "./fileUtils";
 
 
 declare global {
@@ -31,9 +32,9 @@ export default class PinboardSyncPlugin extends Plugin {
 
   public settings: ISettings;
   private syncTimeoutId: number;
-  private settingsTab: DailyPinboardSettingsTab;
+  private settingsTab: PinboardSyncSettingsTab;
 
-  async onload(): Promize<void> {
+  async onload(): Promise<void> {
 
     console.log("[Pinboard] loading plugin");
 
@@ -112,9 +113,6 @@ export default class PinboardSyncPlugin extends Plugin {
     ):Promise<PinboardPostCollection> {
 
       let pinboard = new Pinboard(options.apiToken);
-      let handleApiFailure = (error: any) => {
-        console.log(`API error: ${error}`);
-      };
 
       return pinboard.posts.recent([], options.recentCount);
     }
@@ -125,7 +123,7 @@ export default class PinboardSyncPlugin extends Plugin {
     const dailyNotes = getAllDailyNotes();
     const latestSyncTime = this.settings.latestSyncTime || 0;
 
-    let pinCollection = [];
+    let pinCollection: PinboardPostCollection;
     try {
       pinCollection = await this.getPostsFromPinboard(latestSyncTime, this.settings);
     } catch (err) {
@@ -134,26 +132,41 @@ export default class PinboardSyncPlugin extends Plugin {
       return;
     }
 
-    const daysToPins: Record<string, PinboardPost> = groupBy(
-      pinCollection.posts.filter((pin) => pin.time),
-      (pin) => window.moment(pin.time).startOf("day").format()
-    );
+    if (this.settings.oneNotePerPin) {
+      const pinBasePath = normalizePath(this.settings.oneNotePerPinPath);
+      await Promise.all(pinCollection.posts.map(async pin => {
+        const file = await getOrCreateNoteForPin(this.app, pin, pinBasePath, this.settings.oneNotePerPinTitleFormat);
 
-    for (const [dateStr, pins] of Object.entries(daysToPins)) {
-      const date = window.moment(dateStr);
-
-      let dailyNote = getDailyNote(date, dailyNotes);
-
-      if (!dailyNote) {
-        dailyNote = await createDailyNote(date);
-      }
-
-      await updateSection(
-        this.app,
-        dailyNote,
-        this.settings.sectionHeading,
-        pinRenderer.render(pins)
+        return updateProperties(
+          this.app,
+          file,
+          pinRenderer.renderPinProperties(pin)
+        );
+      }));
+    }
+    
+    if (this.settings.dailyNotesEnabled) {
+      const daysToPins: Record<string, PinboardPost[]> = groupBy(
+        pinCollection.posts.filter((pin) => pin.time),
+        (pin) => window.moment(pin.time).startOf("day").format()
       );
+
+      for (const [dateStr, pins] of Object.entries(daysToPins)) {
+        const date = window.moment(dateStr);
+
+        let dailyNote = getDailyNote(date, dailyNotes);
+
+        if (!dailyNote) {
+          dailyNote = await createDailyNote(date);
+        }
+
+        await updateSection(
+          this.app,
+          dailyNote,
+          this.settings.sectionHeading,
+          pinRenderer.render(pins)
+        );
+      }
     }
 
     new Notice("[Pinboard Sync] complete");
