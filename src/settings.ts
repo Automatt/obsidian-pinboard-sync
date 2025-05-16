@@ -52,7 +52,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   oneNotePerPin: false,
   oneNotePerPinPath: DEFAULT_ONE_NOTE_PER_PIN_PATH,
   oneNotePerPinTag: DEFAULT_ONE_NOTE_PER_PIN_TAG,
-  oneNotePerPinTitleFormat: DEFAULT_ONE_NOTE_PER_PIN_TITLE_FORMAT
+  oneNotePerPinTitleFormat: DEFAULT_ONE_NOTE_PER_PIN_TITLE_FORMAT,
   newlineSeparator: false, 
 });
 
