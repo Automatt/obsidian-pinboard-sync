@@ -30,7 +30,8 @@ export class PinRenderer {
 
       	const extended = pin.extended;
  
-      	const linkText = `- [${pin.description}](${pin.href}) ${extended} ${tags}`.trimEnd()
+		const separator = this.settings.newlineSeparator ? "\n  " : " "
+      	const linkText = `- [${pin.description}](${pin.href})${separator}${extended}${separator}${tags}`.trimEnd()
 
       	return linkText;
 	}
