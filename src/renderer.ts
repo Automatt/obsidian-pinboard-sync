@@ -17,7 +17,7 @@ export class PinRenderer {
 	}
 
 	/**
-	 * Santizes and ensures prefix is added to tag names
+	 * Sanitizes and ensures prefix is added to tag names
 	 * @param omitHash whether to leave out the hash, useful for things like properties blocks
 	*/
 	renderTags(pin: PinboardPost, omitHash?: boolean) {
@@ -26,9 +26,16 @@ export class PinRenderer {
 		let tagNames: string[] = [];
 		pin.tags.forEach(t => tagNames.push(t.name));
 
-		return tagNames.filter((tag) => !!tag)
-			.map((tag) => tag.replace(/\s+/g, "-").replace(/:/g, "-").toLowerCase())
-			.map((tag) => `${omitHash ? '' : '#'}${prefix}${tag}`);
+		const filteredTags = tagNames.filter((tag) => !!tag);
+
+		const sanitizedTags = filteredTags.map((tag) => {
+			const withDashes = tag.replace(/:/g, "-").replace(/\s+/g, "-");
+			return withDashes.toLowerCase();
+		});
+
+		const finalTags = sanitizedTags.map((tag) => `${omitHash ? '' : '#'}${prefix}${tag}`);
+
+		return finalTags;
 	}
 
 	renderPin(pin: PinboardPost): string {

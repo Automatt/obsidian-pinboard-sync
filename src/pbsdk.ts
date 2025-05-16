@@ -47,7 +47,14 @@ export class PinboardPost {
             new Date(opts.time),
             PinboardData.boolean(opts.shared),
             PinboardData.boolean(opts.toread))
-        opts.tags.split(' ').forEach((tagName: string) => post.tags.push(new PinboardTag(tagName)));
+        console.log('Original tags from API:', opts.tags);
+        opts.tags.split(' ').forEach((tagName: string) => {
+            console.log(`Processing tag "${tagName}"`);
+            const sanitizedTagName = tagName.replace(/:/g, '-');
+            console.log(`Sanitized to "${sanitizedTagName}"`);
+            post.tags.push(new PinboardTag(sanitizedTagName));
+        });
+        console.log('Final tags in post:', post.tags.map(t => t.name));
         return post;
     }
 
@@ -201,7 +208,8 @@ export class PinboardTagsEndpoint {
         return this.request.req(opts).then(tagObj => {
             let tags: PinboardTag[] = [];
             for (let tagName in tagObj) {
-                tags.push(new PinboardTag(tagName, tagObj[tagName]));
+                const sanitizedTagName = tagName.replace(/:/g, '-');
+                tags.push(new PinboardTag(sanitizedTagName, tagObj[tagName]));
             }
             debugLog(`Got ${tags.length} tags`);
             return tags;
